@@ -31,7 +31,7 @@ class ContextFlow:
             self.generation_promp_template = "<start_of_turn>model\n"
             self.user_req_template = "<start_of_turn>user\n{user_req}<end_of_turn>\n"
             self.system_injection_template = "<start_of_turn>system\n{system_injection}<end_of_turn>\n"
-            self.tokens = [self.tokenizer.apply_chat_template([{"role": "user", "content": prompt}, {"role": "assistant", "content": ""}])]
+            self.tokens = [self.tokenizer.apply_chat_template([{"role": "user", "content": prompt}])]
             self.stop_token = "<end_of_turn>"
         elif config.model_type.startswith("mistral") or config.model_type.startswith("qwen"):
             self.generation_promp_template = "<|im_start|>assistant\n"
