@@ -8,12 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class ContextFlow:
-    def __init__(self, llm_backend, base_model, max_context=4096, prompt="", prompt_file="", cut_context_multiplier=1, cut_from=1):
+    def __init__(self, llm_backend, base_model, max_context=4096, prompt="", prompt_file="", cut_context_multiplier=1):
         self.tokenizer = AutoTokenizer.from_pretrained(base_model, add_bos_token=False)
         self.max_predict = llm_backend.max_predict
         self.max_context = max_context
         self.cut_context_multiplier = cut_context_multiplier
-        self.cut_from = cut_from
 
         if prompt_file:
             with open(prompt_file) as f:
@@ -72,21 +71,21 @@ class ContextFlow:
             text += self.system_injection_template.replace("{system_injection}", system_injection)
         tokens = self.tokenize(text)
         self.tokens.append(tokens)
-        self._cut_context()  # Освобождаем место под ответ модели
+        return self._cut_context()  # Освобождаем место под ответ модели
 
     def add_system_injection(self, system_injection):
         text = self.system_injection_template.replace("{system_injection}", system_injection)
         self.tokens.append(self.tokenize(text))
-        self._cut_context()  # Освобождаем место под ответ модели
+        return self._cut_context()  # Освобождаем место под ответ модели
 
     async def async_completion(self, temp=0.7, top_p=0.9, min_p=0.05, repeat_last_n=256, repeat_penalty=1.1, callback=None):
         request_tokens = sum(self.tokens, [])
         request_tokens += self.generation_prompt_tokens
-        text_resp = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, repeat_last_n, repeat_penalty, callback)
+        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, repeat_last_n, repeat_penalty, callback)
         response_tokens = self.tokenize(text_resp.strip() + self.stop_token)
         response_tokens = self.generation_prompt_tokens + response_tokens
         self.tokens.append(response_tokens)
-        return text_resp
+        return text_resp, stop_type
 
     def load_context(self, file_name):
         if os.path.isfile(file_name):
@@ -103,12 +102,15 @@ class ContextFlow:
             f.write(self.tokenizer.decode(flat_tokens))
 
     def _cut_context(self):
+        cutted = False
         busy_tokens = len(sum(self.tokens, []))
         free_tokens = self.max_context - busy_tokens
         if free_tokens < self.max_predict:
             while free_tokens < self.max_predict * self.cut_context_multiplier:  # обрезаем с большим запасом, чтобы кеш контекста работал лучше
-                free_tokens += len(self.tokens[self.cut_from])
-                del self.tokens[self.cut_from]
+                free_tokens += len(self.tokens[1])
+                del self.tokens[1]
+                cutted = True
+        return cutted
 
     def clear_context(self):
         del self.tokens[1:]

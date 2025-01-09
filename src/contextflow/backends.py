@@ -18,10 +18,6 @@ class LlamaCppBackend:
                 "top_k": -1,
                 "top_p": top_p,
                 "min_p": min_p,
-                "tfs_z": 1,
-                "typical_p": 1,
-                "presence_penalty": 0,
-                "frequency_penalty": 0,
                 "stop": [self.stop_token, self.tokenizer.eos_token],
                 "cache_prompt": True}
 
@@ -29,7 +25,8 @@ class LlamaCppBackend:
         request = self.get_request_object(request_tokens, False, temp, top_p, min_p, repeat_last_n, repeat_penalty)
         response = requests.post(self.url, json=request)
         response.raise_for_status()
-        return response.json()["content"]
+        resp_obj = response.json()
+        return resp_obj["content"], resp_obj["stop_type"]
 
     async def async_completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, repeat_last_n=256, repeat_penalty=1.1, callback=None):
         request = self.get_request_object(request_tokens, True, temp, top_p, min_p, repeat_last_n, repeat_penalty)
@@ -45,4 +42,4 @@ class LlamaCppBackend:
             text_resp += content
             if callback:
                 await callback(content)
-        return text_resp
+        return text_resp, parsed_event["stop_type"]
