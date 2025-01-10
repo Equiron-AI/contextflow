@@ -8,28 +8,28 @@ class LlamaCppBackend:
         self.url = url
         self.max_predict = max_predict
 
-    def get_request_object(self, request_tokens, stream, temp, top_p, min_p, repeat_last_n, repeat_penalty):
+    def get_request_object(self, request_tokens, stream, temp, top_p, min_p, top_k):
         return {"prompt": request_tokens,
                 "stream": stream,
                 "n_predict": self.max_predict,
                 "temperature": temp,
-                "repeat_last_n": repeat_last_n,
-                "repeat_penalty": repeat_penalty,
-                "top_k": -1,
                 "top_p": top_p,
                 "min_p": min_p,
+                "top_k": top_k,
                 "stop": [self.stop_token, self.tokenizer.eos_token],
+                "dry_multiplier": 0.8,
+                "dry_sequence_breakers": ["\n", ":", "\"", "*", "|", ""],
                 "cache_prompt": True}
 
-    def completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, repeat_last_n=256, repeat_penalty=1.1):
-        request = self.get_request_object(request_tokens, False, temp, top_p, min_p, repeat_last_n, repeat_penalty)
+    def completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, top_k=40):
+        request = self.get_request_object(request_tokens, False, temp, top_p, min_p, top_k)
         response = requests.post(self.url, json=request)
         response.raise_for_status()
         resp_obj = response.json()
         return resp_obj["content"], resp_obj["stop_type"]
 
-    async def async_completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, repeat_last_n=256, repeat_penalty=1.1, callback=None):
-        request = self.get_request_object(request_tokens, True, temp, top_p, min_p, repeat_last_n, repeat_penalty)
+    async def async_completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, top_k=40, callback=None):
+        request = self.get_request_object(request_tokens, True, temp, top_p, min_p, top_k)
         response = requests.post(self.url, json=request, stream=True, headers={'Accept': 'text/event-stream'})
         response.raise_for_status()
         stream = sseclient.SSEClient(response).events()
