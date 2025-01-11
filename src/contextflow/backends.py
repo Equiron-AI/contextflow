@@ -21,14 +21,14 @@ class LlamaCppBackend:
                 "dry_sequence_breakers": ["\n", ":", "\"", "*", "|", ""],
                 "cache_prompt": True}
 
-    def completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, top_k=40):
+    def completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.1, top_k=0):
         request = self.get_request_object(request_tokens, False, temp, top_p, min_p, top_k)
         response = requests.post(self.url, json=request)
         response.raise_for_status()
         resp_obj = response.json()
         return resp_obj["content"], resp_obj["stop_type"]
 
-    async def async_completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.05, top_k=40, callback=None):
+    async def async_completion(self, request_tokens, temp=0.7, top_p=0.9, min_p=0.1, top_k=0, callback=None):
         request = self.get_request_object(request_tokens, True, temp, top_p, min_p, top_k)
         response = requests.post(self.url, json=request, stream=True, headers={'Accept': 'text/event-stream'})
         response.raise_for_status()

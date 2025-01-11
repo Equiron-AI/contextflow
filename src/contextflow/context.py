@@ -78,7 +78,7 @@ class ContextFlow:
         self.tokens.append(self.tokenize(text))
         return self._cut_context()  # Освобождаем место под ответ модели
 
-    async def async_completion(self, temp=0.7, top_p=0.9, min_p=0.05, top_k=40, callback=None):
+    async def async_completion(self, temp=0.7, top_p=0.9, min_p=0.1, top_k=0, callback=None):
         request_tokens = sum(self.tokens, [])
         request_tokens += self.generation_prompt_tokens
         text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, top_k, callback)
