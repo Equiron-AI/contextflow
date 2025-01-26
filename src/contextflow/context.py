@@ -32,12 +32,12 @@ class ContextFlow:
             self.system_injection_template = "<start_of_turn>system\n{system_injection}<end_of_turn>\n"
             self.tokens = [self.tokenizer.apply_chat_template([{"role": "user", "content": prompt}])]
             self.stop_token = "<end_of_turn>"
-        elif config.model_type.startswith("mistral") or config.model_type.startswith("qwen"):
+        elif config.model_type.startswith("qwen"):
             self.generation_promp_template = "<|im_start|>assistant\n"
             self.user_req_template = "<|im_start|>user\n{user_req}<|im_end|>\n"
             self.system_injection_template = "<|im_start|>system\n{system_injection}<|im_end|>\n"
-            self.tokens = [self.tokenizer(f"<|im_start|>system\n{prompt}<|im_end|>\n")["input_ids"]]
-            self.stop_token = "<|im_end|>"
+            self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
+            self.stop_token = self.tokenizer.eos_token
         else:
             raise RuntimeError("Unknown model: " + config.model_type)
 
@@ -78,10 +78,10 @@ class ContextFlow:
         self.tokens.append(self.tokenize(text))
         return self._cut_context()  # Освобождаем место под ответ модели
 
-    async def async_completion(self, temp=0.7, top_p=0.9, min_p=0.1, top_k=0, dry_multiplier=0.8, callback=None):
+    async def async_completion(self, temp=0.7, top_p=0.9, min_p=0.05, dry_multiplier=0.0, callback=None):
         request_tokens = sum(self.tokens, [])
         request_tokens += self.generation_prompt_tokens
-        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, top_k, dry_multiplier, callback)
+        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, dry_multiplier, callback)
         response_tokens = self.tokenize(text_resp.strip() + self.stop_token)
         response_tokens = self.generation_prompt_tokens + response_tokens
         self.tokens.append(response_tokens)
