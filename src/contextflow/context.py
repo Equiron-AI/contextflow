@@ -57,8 +57,7 @@ class ContextFlow:
         return tokens
 
     def sanitize(self, text):
-        return text.replace("#", "") \
-                   .replace("<|", "") \
+        return text.replace("<|", "") \
                    .replace("|>", "") \
                    .replace("<start_of_turn>", "") \
                    .replace("<end_of_turn>", "") \
