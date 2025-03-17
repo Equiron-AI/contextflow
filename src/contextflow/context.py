@@ -30,7 +30,7 @@ class ContextFlow:
             self.generation_promp_template = "<start_of_turn>model\n"
             self.user_req_template = "<start_of_turn>user\n{user_req}<end_of_turn>\n"
             self.system_injection_template = "<start_of_turn>system\n{system_injection}<end_of_turn>\n"
-            self.tokens = [self.tokenizer.apply_chat_template([{"role": "user", "content": prompt}])]
+            self.tokens = self.tokenizer(f"<bos><start_of_turn>system\n{prompt}<end_of_turn>\n")
             self.stop_token = "<end_of_turn>"
         elif config.model_type.startswith("qwen"):
             if "TinyR1" not in config.name_or_path:
