@@ -30,21 +30,14 @@ class ContextFlow:
             self.generation_promp_template = "<start_of_turn>model\n"
             self.user_req_template = "<start_of_turn>user\n{user_req}<end_of_turn>\n"
             self.system_injection_template = "<start_of_turn>system\n{system_injection}<end_of_turn>\n"
-            self.tokens = self.tokenizer(f"<bos><start_of_turn>system\n{prompt}<end_of_turn>\n")
+            self.tokens = [self.tokenizer(f"<bos><start_of_turn>system\n{prompt}<end_of_turn>\n")["input_ids"]]
             self.stop_token = "<end_of_turn>"
         elif config.model_type.startswith("qwen"):
-            if "TinyR1" not in config.name_or_path:
-                self.generation_promp_template = "<|im_start|>assistant\n"
-                self.user_req_template = "<|im_start|>user\n{user_req}<|im_end|>\n"
-                self.system_injection_template = "<|im_start|>system\n{system_injection}<|im_end|>\n"
-                self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
-                self.stop_token = self.tokenizer.eos_token
-            else:
-                self.generation_promp_template = "<｜Assistant｜>"
-                self.user_req_template = "<｜User｜>{user_req}"
-                self.system_injection_template = ""
-                self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
-                self.stop_token = self.tokenizer.eos_token
+            self.generation_promp_template = "<|im_start|>assistant\n"
+            self.user_req_template = "<|im_start|>user\n{user_req}<|im_end|>\n"
+            self.system_injection_template = "<|im_start|>system\n{system_injection}<|im_end|>\n"
+            self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
+            self.stop_token = self.tokenizer.eos_token
         else:
             raise RuntimeError("Unknown model: " + config.model_type)
 
