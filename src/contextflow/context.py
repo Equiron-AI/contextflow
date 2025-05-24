@@ -38,6 +38,12 @@ class ContextFlow:
             self.system_injection_template = "<|im_start|>system\n{system_injection}<|im_end|>\n"
             self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
             self.stop_token = self.tokenizer.eos_token
+        elif config.model_type.startswith("llama"):  # предполагаем, что это яндекс-GPT
+            self.generation_promp_template = " Ассистент:[SEP]"
+            self.user_req_template = " Пользователь: {user_req}\n\n"
+            self.system_injection_template = " Система: {system_injection}\n\n"
+            self.tokens = [self.tokenizer(f"<s> Система: {prompt}\n\n")["input_ids"]]
+            self.stop_token = "<end_of_turn>"
         else:
             raise RuntimeError("Unknown model: " + config.model_type)
 
