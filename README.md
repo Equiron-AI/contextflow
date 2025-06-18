@@ -11,9 +11,9 @@ pip install contextflow
 
 ## Supported Models
 The following LLM models are supported:
-- Cohere Family
 - Gemma Family
 - Qwen Family
+- YandexGPT Family
 
 ## LLM backends
 The following LLM backends are supported:
@@ -21,7 +21,7 @@ The following LLM backends are supported:
 
 ## Run Llama.CPP Server backend
 ```console
-llama.cpp/build/bin/llama-server -m model_q5_k_m.gguf -ngl 99 -fa -c 4096 --host 0.0.0.0 --port 8000
+llama.cpp/build/bin/llama-server -m model_q5_k_m.gguf -ngl 99 -fa -np 2 -c 8192 --host 0.0.0.0 --port 8000
 ```
 
 ## Install CUDA toolkit for Llama.cpp compilation

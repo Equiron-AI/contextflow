@@ -20,13 +20,7 @@ class ContextFlow:
 
         config = AutoConfig.from_pretrained(base_model)
 
-        if config.model_type.startswith("cohere"):
-            self.generation_promp_template = "<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>"
-            self.user_req_template = "<|START_OF_TURN_TOKEN|><|USER_TOKEN|>{user_req}<|END_OF_TURN_TOKEN|>"
-            self.system_injection_template = "<|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{system_injection}<|END_OF_TURN_TOKEN|>"
-            self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
-            self.stop_token = self.tokenizer.eos_token
-        elif config.model_type.startswith("gemma"):
+        if config.model_type.startswith("gemma"):
             self.generation_promp_template = "<start_of_turn>model\n"
             self.user_req_template = "<start_of_turn>user\n{user_req}<end_of_turn>\n"
             self.system_injection_template = "<start_of_turn>system\n{system_injection}<end_of_turn>\n"
@@ -36,6 +30,7 @@ class ContextFlow:
             self.generation_promp_template = "<|im_start|>assistant\n"
             self.user_req_template = "<|im_start|>user\n{user_req}<|im_end|>\n"
             self.system_injection_template = "<|im_start|>system\n{system_injection}<|im_end|>\n"
+            self.tool_response_template = "<|im_start|>tool\n<tool_response>\n{tool_response}\n</tool_response>\n<|im_end|>\n"
             self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
             self.stop_token = self.tokenizer.eos_token
         elif config.model_type.startswith("llama"):  # предполагаем, что это яндекс-GPT
@@ -83,10 +78,15 @@ class ContextFlow:
         self.tokens.append(self.tokenize(text))
         return self._cut_context()  # Освобождаем место под ответ модели
 
-    async def async_completion(self, temp=0.7, top_p=0.9, min_p=0.05, dry_multiplier=0.0, callback=None):
+    def add_tool_response(self, tool_response):
+        text = self.tool_response_template.replace("{tool_response}", tool_response)
+        self.tokens.append(self.tokenize(text))
+        return self._cut_context()  # Освобождаем место под ответ модели
+
+    async def async_completion(self, temp=0.7, top_p=0.95, min_p=0.05, top_k=20, dry_multiplier=0.0, callback=None):
         request_tokens = sum(self.tokens, [])
         request_tokens += self.generation_prompt_tokens
-        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, dry_multiplier, callback)
+        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, top_k, dry_multiplier, callback)
         response_tokens = self.tokenize(text_resp.strip() + self.stop_token)
         response_tokens = self.generation_prompt_tokens + response_tokens
         self.tokens.append(response_tokens)
