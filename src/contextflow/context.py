@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContextFlow:
-    def __init__(self, llm_backend, base_model, max_context=4096, prompt="", prompt_file="", cut_context_multiplier=1):
+    def __init__(self, llm_backend, base_model, max_context=4096, prompt="", prompt_file="", cut_context_multiplier=1, model_type="auto"):
         self.tokenizer = AutoTokenizer.from_pretrained(base_model, add_bos_token=False)
         self.max_predict = llm_backend.max_predict
         self.max_context = max_context
@@ -20,25 +20,21 @@ class ContextFlow:
 
         config = AutoConfig.from_pretrained(base_model)
 
-        if config.model_type.startswith("gemma"):
+        if model_type == "auto":
+            model_type = config.model_type
+
+        if model_type.startswith("gemma"):
             self.generation_promp_template = "<start_of_turn>model\n"
             self.user_req_template = "<start_of_turn>user\n{user_req}<end_of_turn>\n"
             self.system_injection_template = "<start_of_turn>system\n{system_injection}<end_of_turn>\n"
             self.tokens = [self.tokenizer(f"<bos><start_of_turn>system\n{prompt}<end_of_turn>\n")["input_ids"]]
             self.stop_token = "<end_of_turn>"
-        elif config.model_type.startswith("qwen"):
+        elif model_type.startswith("qwen"):
             self.generation_promp_template = "<|im_start|>assistant\n"
             self.user_req_template = "<|im_start|>user\n{user_req}<|im_end|>\n"
-            self.system_injection_template = "<|im_start|>system\n{system_injection}<|im_end|>\n"
             self.tool_response_template = "<|im_start|>tool\n<tool_response>\n{tool_response}\n</tool_response>\n<|im_end|>\n"
             self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
             self.stop_token = self.tokenizer.eos_token
-        elif config.model_type.startswith("llama"):  # предполагаем, что это яндекс-GPT
-            self.generation_promp_template = " Ассистент:[SEP]"
-            self.user_req_template = " Пользователь: {user_req}\n\n"
-            self.system_injection_template = " Система: {system_injection}\n\n"
-            self.tokens = [self.tokenizer(f"<s> Система: {prompt}\n\n")["input_ids"]]
-            self.stop_token = "<end_of_turn>"
         else:
             raise RuntimeError("Unknown model: " + config.model_type)
 
@@ -58,12 +54,7 @@ class ContextFlow:
         return tokens
 
     def sanitize(self, text):
-        return text.replace("<|", "") \
-                   .replace("|>", "") \
-                   .replace("<start_of_turn>", "") \
-                   .replace("<end_of_turn>", "") \
-                   .replace("[INST]", "") \
-                   .replace("[/INST]", "")
+        return text.replace("<|", "").replace("|>", "").replace("<start_of_turn>", "").replace("<end_of_turn>", "")
 
     def add_user_request(self, user_request, system_injection="", unsanitized_raw_postfix=""):
         text = self.user_req_template.replace("{user_req}", self.sanitize(user_request.strip()) + unsanitized_raw_postfix)
