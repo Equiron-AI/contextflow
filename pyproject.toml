@@ -1,20 +1,24 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "contextflow"
-version = "1.0"
-authors = [
-  { name="Vladimir Petrukhin", email="man4j@ya.ru" },
-]
+version = "1.4.1"
 description = "Large Language Models Tools"
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Vladimir Petrukhin", email = "man4j@ya.ru" }
+]
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: OS Independent",
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
   "transformers",
@@ -25,3 +29,19 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/Equiron-AI/contextflow"
+Repository = "https://github.com/Equiron-AI/contextflow"
+Issues = "https://github.com/Equiron-AI/contextflow/issues"
+
+# Указываем src-layout
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["contextflow*"]
+
+[tool.setuptools.package-data]
+contextflow = ["**/*.j2", "**/*.json", "**/*.txt"]
+
+#[project.scripts]
+#contextflow = "contextflow.__main__:main"

@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 from transformers import AutoTokenizer, AutoConfig
 
 
@@ -78,8 +79,8 @@ class ContextFlow:
         request_tokens = sum(self.tokens, [])
         request_tokens += self.generation_prompt_tokens
         text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, top_k, dry_multiplier, callback)
-        response_tokens = self.tokenize(text_resp.strip() + self.stop_token)
-        response_tokens = self.generation_prompt_tokens + response_tokens
+        without_think = re.sub(r"<think>.*?</think>", "", text_resp, flags=re.DOTALL)
+        response_tokens = self.generation_prompt_tokens + self.tokenize(without_think.strip() + self.stop_token)
         self.tokens.append(response_tokens)
         return text_resp, stop_type
 
