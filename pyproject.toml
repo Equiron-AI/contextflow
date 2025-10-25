@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "contextflow"
-version = "1.4.1"
+version = "1.7.0"
 description = "Large Language Models Tools"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
