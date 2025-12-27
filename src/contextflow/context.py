@@ -36,6 +36,17 @@ class ContextFlow:
             self.tool_response_template = "<|im_start|>tool\n<tool_response>\n{tool_response}\n</tool_response>\n<|im_end|>\n"
             self.tokens = [self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}])]
             self.stop_token = self.tokenizer.eos_token
+        elif model_type.startswith("deepseek_v3"):  # gigachat
+            self.generation_promp_template = "assistant<|role_sep|>\n"
+            self.user_req_template = "user<|role_sep|>\n{user_req}<|message_sep|>\n\n"
+            self.tool_response_template = "function result<|role_sep|>\n{tool_response}<|message_sep|>\n\n"
+
+            unsafe_block = ", and avoid unsafe or prohibited content in your responses"
+            prompt_as_text = self.tokenizer.apply_chat_template([{"role": "system", "content": prompt}], tokenize=False)
+            prompt_as_text = prompt_as_text.replace(unsafe_block, "")
+
+            self.tokens = [self.tokenize(prompt_as_text)]
+            self.stop_token = "<|message_sep|>"
         else:
             raise RuntimeError("Unknown model: " + config.model_type)
 
