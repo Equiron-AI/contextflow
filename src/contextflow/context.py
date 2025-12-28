@@ -86,10 +86,10 @@ class ContextFlow:
         self.tokens.append(self.tokenize(text))
         return self._cut_context()  # Освобождаем место под ответ модели
 
-    async def async_completion(self, temp=0.7, top_p=0.95, min_p=0.05, top_k=20, id_slot=-1, callback=None):
+    async def async_completion(self, temp=0.7, top_p=0.95, min_p=0.05, top_k=20, dry_multiplier=0.0, id_slot=-1, callback=None):
         request_tokens = sum(self.tokens, [])
         request_tokens += self.generation_prompt_tokens
-        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, top_k, id_slot, callback)
+        text_resp, stop_type = await self.llm_backend.async_completion(request_tokens, temp, top_p, min_p, top_k, dry_multiplier, id_slot, callback)
         without_think = re.sub(r"<think>.*?</think>", "", text_resp, flags=re.DOTALL)
         response_tokens = self.generation_prompt_tokens + self.tokenize(without_think.strip() + self.stop_token)
         self.tokens.append(response_tokens)

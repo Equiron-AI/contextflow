@@ -10,18 +10,19 @@ class OpenaAIBackend:
         self.model = model
         self.api_key = api_key
 
-    async def async_completion(self, request_tokens, temp=0.7, top_p=0.95, min_p=0.05, top_k=20, id_slot=-1, callback=None):
+    async def async_completion(self, request_tokens, temp=0.7, top_p=0.95, min_p=0.05, top_k=20, dry_multiplier=0.0, id_slot=-1, callback=None):
         """
         Стримит из /v1/completions. Возвращает (text, finish_reason_like).
         finish_reason_like ~ 'stop' | 'length' | 'content_filter' | ...
         """
         payload = self.get_request_object(
-            request_tokens=request_tokens,
-            temp=temp,
-            top_p=top_p,
-            min_p=min_p,
-            top_k=top_k,
-            id_slot=id_slot,
+            request_tokens,
+            temp,
+            top_p,
+            min_p,
+            top_k,
+            dry_multiplier,
+            id_slot
         )
 
         headers = {
@@ -71,7 +72,7 @@ class OpenaAIBackend:
 
         return text_resp, (finish_reason or "stop")
 
-    def get_request_object(self, request_tokens, temp, top_p, min_p, top_k, id_slot):
+    def get_request_object(self, request_tokens, temp, top_p, min_p, top_k, dry_multiplier, id_slot):
         return {
             "model": self.model,              # для «чистого» OpenAI обязателен; локальным сервером может игнорироваться
             "prompt": request_tokens,
@@ -86,6 +87,7 @@ class OpenaAIBackend:
             # ---- llama.cpp специфичные параметры
             "id_slot": id_slot,
             "repeat_penalty": 1.0,
+            "dry_multiplier": dry_multiplier,
             # ---- vllm специфичные параметры
             "repetition_penalty": 1.0
         }
