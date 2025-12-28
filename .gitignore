@@ -2,3 +2,5 @@ dist
 .ipynb_checkpoints
 **.pyc
 src/contextflow.egg-info
+.publish-venv/
+.venv/
